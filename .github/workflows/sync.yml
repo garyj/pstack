@@ -4,9 +4,17 @@ on:
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
+    inputs:
+      from:
+        description: Cursor commit to summarise from (skips the sync)
+        required: false
+      to:
+        description: Cursor commit to summarise to
+        required: false
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: sync
@@ -14,7 +22,12 @@ concurrency:
 
 jobs:
   sync:
+    if: ${{ !inputs.from }}
     runs-on: ubuntu-latest
+    outputs:
+      from: ${{ steps.range.outputs.from }}
+      to: ${{ steps.range.outputs.to }}
+      moved: ${{ steps.upstream.outputs.moved }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -26,8 +39,12 @@ jobs:
           git remote add michael https://github.com/backnotprop/pstack.git
           git fetch michael main upstream
 
-      - name: Set upstream to michael/upstream
-        run: git push --force origin refs/remotes/michael/upstream:refs/heads/upstream
+      - name: Record the Cursor commits this sync spans
+        id: range
+        run: |
+          cursor_sha() { git log -1 --format=%s "$1" | sed -n 's|^upstream: cursor/plugins/pstack @ ||p'; }
+          echo "from=$(cursor_sha origin/upstream)" >> "$GITHUB_OUTPUT"
+          echo "to=$(cursor_sha michael/upstream)" >> "$GITHUB_OUTPUT"
 
       - name: Merge michael/main
         run: |
@@ -48,6 +65,12 @@ jobs:
       - name: Push
         run: git push origin HEAD:main
 
+      - name: Set upstream to michael/upstream
+        id: upstream
+        run: |
+          git push --force origin refs/remotes/michael/upstream:refs/heads/upstream
+          echo "moved=true" >> "$GITHUB_OUTPUT"
+
       - name: Check .apm/ covers everything pstack ships
         run: |
           diff -r agents .apm/agents
@@ -60,3 +83,26 @@ jobs:
             echo "::error::New top-level entries that .apm/ may not cover: $unknown"
             exit 1
           fi
+
+  digest:
+    needs: sync
+    if: ${{ always() && (inputs.from || (needs.sync.outputs.moved == 'true' && needs.sync.outputs.from != needs.sync.outputs.to)) }}
+    runs-on: ubuntu-latest
+    env:
+      FROM: ${{ inputs.from || needs.sync.outputs.from }}
+      TO: ${{ inputs.to || needs.sync.outputs.to }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          enable-cache: false
+
+      - name: Summarise Lauren's changes
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: uv run .github/scripts/digest.py "$FROM" "$TO" "$RUNNER_TEMP"
+
+      - name: Open the digest issue
+        run: gh issue create -R "$GITHUB_REPOSITORY" --title "$(cat "$RUNNER_TEMP/title.txt")" --body-file "$RUNNER_TEMP/body.md"
