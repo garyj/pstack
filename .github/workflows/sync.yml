@@ -44,4 +44,19 @@ jobs:
           cp -r agents .apm/agents
           git add apm.yml .apm/agents
           git commit -m "Sync backnotprop/pstack @ $(git rev-parse --short michael/main) (${version})"
-          git push origin HEAD:main
+
+      - name: Push
+        run: git push origin HEAD:main
+
+      - name: Check .apm/ covers everything pstack ships
+        run: |
+          diff -r agents .apm/agents
+          for manifest in plugin.json .cursor-plugin/plugin.json; do
+            jq -e 'keys - ["$schema", "name", "displayName", "version", "description", "author", "homepage", "repository", "license", "logo", "keywords", "category", "tags", "skills", "agents"] == []' "$manifest"
+          done
+          jq -e '.skills == "./skills/" and .agents == "./agents/"' .cursor-plugin/plugin.json
+          unknown=$(git ls-tree --name-only HEAD | grep -vxE '\.apm|\.cursor-plugin|\.github|\.gitignore|agents|apm\.yml|assets|automations|docs|LICENSE|MIRROR\.md|plugin\.json|README\.md|skills' || true)
+          if [ -n "$unknown" ]; then
+            echo "::error::New top-level entries that .apm/ may not cover: $unknown"
+            exit 1
+          fi
