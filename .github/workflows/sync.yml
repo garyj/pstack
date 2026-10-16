@@ -1,0 +1,45 @@
+name: Sync backnotprop/pstack
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Fetch backnotprop/pstack
+        run: |
+          git remote add michael https://github.com/backnotprop/pstack.git
+          git fetch michael main upstream
+
+      - name: Set upstream to michael/upstream
+        run: git push --force origin refs/remotes/michael/upstream:refs/heads/upstream
+
+      - name: Merge michael/main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git merge --no-ff --no-commit michael/main
+          if ! git rev-parse -q --verify MERGE_HEAD >/dev/null; then
+            echo "main already contains michael/main"
+            exit 0
+          fi
+          version=$(jq -r .version plugin.json)
+          sed -i "s/^version: .*/version: ${version}/" apm.yml
+          git add apm.yml
+          git commit -m "Sync backnotprop/pstack @ $(git rev-parse --short michael/main) (${version})"
+          git push origin HEAD:main
