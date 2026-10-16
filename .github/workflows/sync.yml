@@ -40,6 +40,8 @@ jobs:
           fi
           version=$(jq -r .version plugin.json)
           sed -i "s/^version: .*/version: ${version}/" apm.yml
-          git add apm.yml
+          rm -rf .apm/agents
+          cp -r agents .apm/agents
+          git add apm.yml .apm/agents
           git commit -m "Sync backnotprop/pstack @ $(git rev-parse --short michael/main) (${version})"
           git push origin HEAD:main
