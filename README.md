@@ -1,11 +1,33 @@
 <!-- mirror:start — this top section is specific to the mirror. Everything after mirror:end is the upstream README from cursor/plugins/pstack, unchanged. To sync with upstream, follow MIRROR.md. -->
-# pstack — standalone mirror
+<h1 align="center">pstack — standalone mirror</h1>
 
-> **Mirror** of [`cursor/plugins/pstack`](https://github.com/cursor/plugins/tree/main/pstack) — kept in sync for standalone use.
-> Works in Claude Code, Codex, Pi, and other agents, not only Cursor.
-> See also [`backnotprop/bro`](https://github.com/backnotprop/bro), referenced by the [`/bro`](./skills/bro/SKILL.md) skill.
+<p align="center">
+  <a href="https://github.com/cursor/plugins/tree/main/pstack">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="mirror-assets/header-dark.svg">
+      <img src="mirror-assets/header-light.svg" width="100%" alt="cursor/plugins/pstack is kept in sync with this mirror, backnotprop/pstack. npx skills add backnotprop/pstack installs it into Claude Code, Codex, Pi, Cursor, OpenCode, and other agents.">
+    </picture>
+  </a>
+</p>
 
-Cursor's original README is [further down this page](#pstack).
+<p align="center">
+  <b>Mirror</b> of <a href="https://github.com/cursor/plugins/tree/main/pstack"><code>cursor/plugins/pstack</code></a> — kept in sync for standalone use.
+</p>
+
+<p align="center">
+  <a href="https://github.com/backnotprop/plannotator"><picture>
+    <source media="(prefers-color-scheme: dark)" srcset="mirror-assets/sponsor-plannotator-dark.svg">
+    <img src="mirror-assets/sponsor-plannotator-light.svg" width="48%" alt="Sponsored by Plannotator">
+  </picture></a>
+  <a href="https://plannotator.ai/inbox/"><picture>
+    <source media="(prefers-color-scheme: dark)" srcset="mirror-assets/sponsor-inbox-dark.svg">
+    <img src="mirror-assets/sponsor-inbox-light.svg" width="48%" alt="Try Plannotator Inbox today">
+  </picture></a>
+</p>
+
+<p align="center">
+  Poteto's Bro Skill was created by me, <a href="https://github.com/backnotprop/bro">backnotprop/bro</a>
+</p>
 
 ## Install
 
@@ -18,6 +40,8 @@ npx skills add backnotprop/pstack
 The CLI shows every skill in a list you can search. Select the skills you want, then select your agents.
 
 ## Skills
+
+Cursor's original README is [further down this page](#pstack).
 
 These skills don't call other pstack skills, so each one works alone:
 
@@ -44,6 +68,11 @@ Skills that spawn subagents point to the Subagents section of `poteto-mode` to p
 ## What this mirror changes
 
 Many skills were Cursor-specific. They've been rewritten to work in any harness.
+
+The mirror also carries two community fixes that aren't upstream yet:
+
+- `no-comments` keeps a comment about an outside rule (a dependency, platform, or protocol) when it can't check the rule, and marks it for review instead of deleting it. A rejected review no longer stops the whole run. ([#14](https://github.com/backnotprop/pstack/issues/14))
+- The orchestrate scripts take `--base <branch>` for PR stacks that don't start at `main`. ([#15](https://github.com/backnotprop/pstack/pull/15))
 <!-- mirror:end -->
 
 ---
