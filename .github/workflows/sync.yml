@@ -78,11 +78,12 @@ jobs:
             jq -e 'keys - ["$schema", "name", "displayName", "version", "description", "author", "homepage", "repository", "license", "logo", "keywords", "category", "tags", "skills", "agents"] == []' "$manifest"
           done
           jq -e '.skills == "./skills/" and .agents == "./agents/"' .cursor-plugin/plugin.json
-          unknown=$(git ls-tree --name-only HEAD | grep -vxE '\.apm|\.cursor-plugin|\.github|\.gitignore|agents|apm\.yml|assets|automations|docs|LICENSE|MIRROR\.md|plugin\.json|README\.md|skills' || true)
-          if [ -n "$unknown" ]; then
-            echo "::error::New top-level entries that .apm/ may not cover: $unknown"
-            exit 1
-          fi
+          for component in rules commands hooks mcp.json .mcp.json; do
+            if [ -e "$component" ]; then
+              echo "::error::pstack now ships $component, which .apm/ does not cover"
+              exit 1
+            fi
+          done
 
   digest:
     needs: sync
