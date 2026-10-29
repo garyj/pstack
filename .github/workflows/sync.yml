@@ -39,6 +39,10 @@ jobs:
           git remote add michael https://github.com/backnotprop/pstack.git
           git fetch michael main upstream
 
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          enable-cache: false
+
       - name: Record the Cursor commits this sync spans
         id: range
         run: |
@@ -59,7 +63,8 @@ jobs:
           sed -i "s/^version: .*/version: ${version}/" apm.yml
           rm -rf .apm/agents
           cp -r agents .apm/agents
-          git add apm.yml .apm/agents
+          uv run .github/scripts/apm_skills.py
+          git add apm.yml .apm
           git commit -m "Sync backnotprop/pstack @ $(git rev-parse --short michael/main) (${version})"
 
       - name: Push
@@ -74,6 +79,8 @@ jobs:
       - name: Check .apm/ covers everything pstack ships
         run: |
           diff -r agents .apm/agents
+          uv run .github/scripts/apm_skills.py
+          test -z "$(git status --porcelain -- .apm/skills)"
           for manifest in plugin.json .cursor-plugin/plugin.json; do
             jq -e 'keys - ["$schema", "name", "displayName", "version", "description", "author", "homepage", "repository", "license", "logo", "keywords", "category", "tags", "skills", "agents"] == []' "$manifest"
           done
