@@ -8,6 +8,8 @@ color: yellow
 
 # Poteto mode
 
+In Claude Code, read the Claude Code adapter (the `pstack-harness` skill) once per session before you follow this skill. It maps the Cursor names in pstack skills to Claude Code.
+
 Bundled skills live at `../<name>/SKILL.md` from this file, so put this file's absolute path in every `poteto-agent` prompt.
 
 ## Non-negotiables
@@ -21,8 +23,8 @@ The remaining triggers live only here:
 - A fork you could settle by running something → prototype it per `playbooks/prototype.md` instead of asking.
 - Code → name the data shape first. Across a function boundary → **architect**. Fan-out → **swarm**. Bakeoff → **arena**. Contested design → **interrogate**.
 - Prose, your reply included → **unslop**. Docs, PR descriptions, commit messages → **technical-writing**.
-- Before commit → `/deslop` from the `cursor-team-kit` plugin. Without it, see **Harness**. Before review → **no-comments**.
-- Shipping UI / IDE / CLI → `control-ui` or `control-cli` from `cursor-team-kit`. Without them, see **Harness**.
+- Before commit → `/deslop` from the `cursor-team-kit` plugin. Before review → **no-comments**.
+- Shipping UI / IDE / CLI → `control-ui` or `control-cli` from `cursor-team-kit`.
 - A number you measured → **benchmark-checklist**.
 - PR status → the **Babysit** playbook, not Cursor's built-in babysit skill. Landing a green stack → the **Shipping** playbook.
 - Bot review comments → judge each on its merits.
@@ -85,31 +87,19 @@ Read the leaf skill in full for any principle you apply. Each entry names when i
 
 **Use `subagent_type: "poteto-agent"` for any subagent you spawn directly inside a playbook step.** The chat that receives `/poteto-mode` runs the playbook itself. Routed workflow skills (`interrogate`, `swarm`) set their own `subagent_type`. Respect it.
 
-**Defaults for every `Task` call.** `run_in_background: true`, agent mode (readonly strips MCP), file pointers not inlined context, and an explicit model per role, Project workers included. `/setup-pstack` writes the pstack settings file (`~/.cursor/rules/pstack-models.mdc` in Cursor, `~/.claude/rules/pstack-models.md` in Claude Code, `~/.agents/pstack-models.md` in other harnesses), whose per-role lines override the defaults below and the role models in the routed skills (`arena`, `swarm`, `interrogate`). A role with no line keeps its default. A line of `inherit-parent` or `auto` runs the role on the parent model, so omit `model` and spawn a general-purpose subagent (`generalPurpose` in Cursor), because `poteto-agent` defaults to Opus 5.5. Each code playbook reads its own line (`feature, refactoring`, `bug-fix`, `perf-issue`, or `hillclimb`), prose and judgment read `judgment and prose`, and trivial mechanical edits read `swarm workers`. If the settings file has no `# defaults: 3` line, an older setup wrote it. Keep honoring its lines, and tell the user once per session to rerun `/setup-pstack`.
+**Defaults for every `Task` call.** `run_in_background: true`, agent mode (readonly strips MCP), file pointers not inlined context, and an explicit model per role, Project workers included. `/setup-pstack` writes `~/.cursor/rules/pstack-models.mdc`, whose per-role lines override the defaults below and the role models in the routed skills (`arena`, `swarm`, `interrogate`). A role with no line keeps its default. A line of `inherit-parent` or `auto` runs the role on the parent model, so omit `model` and spawn `generalPurpose`, because `poteto-agent` defaults to Opus 5.5. Each code playbook reads its own line (`feature, refactoring`, `bug-fix`, `perf-issue`, or `hillclimb`), prose and judgment read `judgment and prose`, and trivial mechanical edits read `swarm workers`. If the rule has no `# defaults: 3` line, an older setup wrote it. Keep honoring its lines, and tell the user once per session to rerun `/setup-pstack`.
 
 - Code, prose, and judgment: `claude-opus-5-5-xhigh-fast`.
 - Trivial mechanical edits: `claude-opus-5-5-high-fast`.
-- Diverse review and design panels: one runner each on `claude-fable-5-2-high`, `claude-opus-5-5-high-fast`, and `gemini-4-neon-high`.
+- Diverse review and design panels: one runner each on `claude-fable-5-2-high`, `claude-opus-5-5-high-fast`, and `gemini-4-neon-xhigh`.
 
 **Fable 5.2 is an exception.** It runs outside a panel only when the user named it for this task or two Opus 5.5 xhigh runs of the same brief failed its check. Say which. Difficulty alone never qualifies.
 
-**Match the model to the job.** Start from the role's line or default, keep its family, and set the level the job needs. The `/setup-pstack` budget sets each role's starting level. Panel seats keep their listed level. Raise any other role one step, up to xhigh, for the hardest or subtlest work, lower it one step for judgment, and two or more steps for routine work. No role runs above xhigh. Opus 5.5 always runs its `-fast` slug. Verification always runs on the `swarm workers` model, `claude-opus-5-5-high-fast` by default. A Gemini seat never runs above `gemini-4-neon-high`. If your subagent tool rejects a slug, never pass it again. Fall back to the role's line or default, then the calling skill's fallback, then the closest valid slug of the same family, then omit `model`. Say so.
+**Match the model to the job.** Start from the role's line or default, keep its family, and set the level the job needs. The `/setup-pstack` budget sets each role's starting level. Panel seats keep their listed level. Raise any other role one step, up to xhigh, for the hardest or subtlest work, lower it one step for judgment, and two or more steps for routine work. No role runs above xhigh. Opus 5.5 always runs its `-fast` slug. Verification always runs on the `swarm workers` model, `claude-opus-5-5-high-fast` by default. A Gemini seat runs at `gemini-4-neon-xhigh` unless its line names another level. If the Task tool rejects a slug, never pass it again. Fall back to the role's line or default, then the calling skill's fallback, then the closest valid slug of the same family, then omit `model`. Say so.
 
 You own every subagent's work. Review the diff and write your own summary. A second opinion is the same prompt on another vendor's model.
 
 **Fresh subagents by default.** Give a fix round, a follow-up, a retry, or the next queue item to a fresh subagent with the original brief, every later directive, and the prior agent's report and branch. Resume an existing subagent only when the work needs state that lives in it and is costly to move: its checkout, its uncommitted changes, or a process it still runs.
-
-## Harness
-
-pstack was written for Cursor. In another harness (Claude Code, Codex, Pi, OpenCode, and others), read Cursor-specific instructions in this skill, its playbooks, and the routed skills through these mappings. If you can't tell which harness you are, check which of the paths below exist.
-
-- **Subagents.** `Task` means your subagent tool: `Agent` in Claude Code (`subagent_type: general-purpose`), `task` in OpenCode (`subagent_type: general`), `spawn_agent` in Codex. Drop parameters your tool doesn't have. `environment: "cloud"` means a Cursor cloud agent. Elsewhere, run that agent locally in its own worktree. If your harness has no subagent tool, as in Pi without an extension, do each delegated step yourself, one after another.
-- **`poteto-agent`.** Where it isn't registered as a subagent, spawn a general subagent whose prompt starts with: "Read <this file's absolute path> in full, including its Principles section, before any work." Then give the task.
-- **Model settings.** Cursor loads `~/.cursor/rules/pstack-models.mdc` and Claude Code loads `~/.claude/rules/pstack-models.md` automatically. Elsewhere, `/setup-pstack` writes `~/.agents/pstack-models.md`. Read it at task start if it exists. If a model name doesn't resolve in your harness, use its closest equivalent. Cursor puts the reasoning level and speed in the model name (`-xhigh`, `-fast`). Elsewhere, set the level with your subagent tool's effort option if it has one (`effort` on Claude Code's `Agent`), and skip what your tool can't set.
-- **Transcripts.** Read only the active workspace's sessions, never other projects'. Cursor: the `agent-transcripts/` directory the system prompt names. Claude Code: `~/.claude/projects/<slug>/*.jsonl`, where `<slug>` is the workspace path with every character that isn't a letter or digit turned into "-". Pi: `~/.pi/agent/sessions/--<slug>--/*.jsonl`, where `<slug>` is the workspace path with the leading slash dropped and each "/" turned into "-". Codex: `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl`, keeping files whose first line has `payload.cwd` equal to the workspace path. OpenCode: `~/.local/share/opencode/storage/`.
-- **Skill folders.** Project: `.cursor/skills/` (Cursor), `.claude/skills/` (Claude Code), `.pi/skills/` (Pi), `.agents/skills/` (Codex, OpenCode, and others). User: `~/.cursor/skills/`, `~/.claude/skills/`, `~/.pi/agent/skills/`, `~/.codex/skills/`, `~/.agents/skills/`.
-- **Questions.** `AskQuestion` means your structured-question tool: `AskUserQuestion` in Claude Code, `question` in OpenCode. Without one, ask in chat with numbered options.
-- **Tools pstack doesn't ship.** `create-skill` is Cursor's built-in skill-authoring skill. Elsewhere, use Anthropic's `skill-creator` or follow the Agent Skills format at agentskills.io. `deslop`, `control-cli`, and `control-ui` come from Cursor's `cursor-team-kit` plugin. Without `deslop`, reread the diff before commit and cut AI slop yourself. Without the control skills, drive the app with the automation you have: Playwright or a CDP browser for web and Electron, tmux or a PTY for CLIs and TUIs. `/loop` is built into Cursor and Claude Code. Without it, wait between checks with a timed shell command.
 
 ## Writing the reply
 

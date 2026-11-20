@@ -2,9 +2,11 @@
 # requires-python = ">=3.12"
 # dependencies = ["anthropic>=1.15"]
 # ///
-"""Summarise the cursor/plugins PRs that changed pstack between two commits."""
+"""Summarise the cursor/plugins PRs that changed pstack between two commits.
 
-import base64
+Usage: digest.py <old commit> <new commit> <cursor/plugins clone> <output dir>
+"""
+
 import json
 import re
 import subprocess
@@ -16,6 +18,7 @@ import anthropic
 REPO = 'cursor/plugins'
 MODEL = 'claude-sonnet-5-5'
 PROMPT = Path(__file__).with_name('digest-prompt.md').read_text()
+PR_NUMBER = re.compile(r'\(#(\d+)\)$')
 
 
 def gh(path: str) -> list | dict:
@@ -24,31 +27,25 @@ def gh(path: str) -> list | dict:
     return [item for page in pages for item in page] if isinstance(pages[0], list) else pages[0]
 
 
-def version(sha: str) -> str:
-    manifest = gh(f'repos/{REPO}/contents/pstack/.cursor-plugin/plugin.json?ref={sha}')
-    return json.loads(base64.b64decode(manifest['content']))['version']
+def git(clone: Path, *args: str) -> str:
+    return subprocess.run(['git', '-C', str(clone), *args], capture_output=True, text=True, check=True).stdout
 
 
-def commits_between(old: str, new: str) -> list[str]:
-    shas = []
-    for commit in gh(f'repos/{REPO}/commits?path=pstack&sha={new}&per_page=100'):
-        if commit['sha'].startswith(old):
-            return shas[::-1]
-        shas.append(commit['sha'])
-    sys.exit(f'{old} is not an ancestor of {new} in {REPO}')
+def version(clone: Path, sha: str) -> str:
+    return json.loads(git(clone, 'show', f'{sha}:pstack/.cursor-plugin/plugin.json'))['version']
 
 
-def clean(body: str | None) -> str:
-    body = re.sub(r'<!-- CURSOR_SUMMARY -->.*?<!-- /CURSOR_SUMMARY -->', '', body or '', flags=re.DOTALL)
-    body = re.sub(r'<!--.*?-->', '', body, flags=re.DOTALL)
-    return re.sub(r'<div><a href=\"https://cursor\.com/agents.*', '', body).strip()
-
-
-def pull_requests(shas: list[str]) -> list[dict]:
+def pull_requests(clone: Path, old: str, new: str) -> list[dict]:
     prs = {}
-    for sha in shas:
-        for pr in gh(f'repos/{REPO}/commits/{sha}/pulls'):
-            if pr['merged_at'] and not pr['title'].startswith('chore(pstack): bump'):
+    for line in git(clone, 'log', '--reverse', '--format=%H %s', f'{old}..{new}', '--', 'pstack').splitlines():
+        sha, subject = line.split(' ', 1)
+        found = [pr for pr in gh(f'repos/{REPO}/commits/{sha}/pulls') if pr['merged_at']]
+        # A commit pushed by rebase or by hand has no linked PR, but its subject still names one.
+        if not found and (number := PR_NUMBER.search(subject)):
+            pr = gh(f'repos/{REPO}/pulls/{number[1]}')
+            found = [pr] if pr['merged_at'] else []
+        for pr in found:
+            if not pr['title'].startswith('chore(pstack): bump'):
                 prs[pr['number']] = pr
     return [
         {
@@ -67,6 +64,12 @@ def pull_requests(shas: list[str]) -> list[dict]:
     ]
 
 
+def clean(body: str | None) -> str:
+    body = re.sub(r'<!-- CURSOR_SUMMARY -->.*?<!-- /CURSOR_SUMMARY -->', '', body or '', flags=re.DOTALL)
+    body = re.sub(r'<!--.*?-->', '', body, flags=re.DOTALL)
+    return re.sub(r'<div><a href=\"https://cursor\.com/agents.*', '', body).strip()
+
+
 def summarise(prs: list[dict]) -> str:
     response = anthropic.Anthropic().beta.messages.create(
         model=MODEL,
@@ -81,11 +84,11 @@ def summarise(prs: list[dict]) -> str:
     return ''.join(block.text for block in response.content if block.type == 'text')
 
 
-def main(old: str, new: str, out_dir: Path) -> None:
-    prs = pull_requests(commits_between(old, new))
+def main(old: str, new: str, clone: Path, out_dir: Path) -> None:
+    prs = pull_requests(clone, old, new)
     if not prs:
         sys.exit(f'No merged pstack PRs between {old} and {new}')
-    old_version, new_version = version(old), version(new)
+    old_version, new_version = version(clone, old), version(clone, new)
     (out_dir / 'title.txt').write_text(f'pstack {old_version} → {new_version}: what Lauren changed')
     (out_dir / 'body.md').write_text(
         f'{summarise(prs)}\n\n---\n\n'
@@ -95,4 +98,4 @@ def main(old: str, new: str, out_dir: Path) -> None:
 
 
 if __name__ == '__main__':
-    main(sys.argv[1], sys.argv[2], Path(sys.argv[3]))
+    main(sys.argv[1], sys.argv[2], Path(sys.argv[3]), Path(sys.argv[4]))

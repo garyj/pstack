@@ -6,6 +6,8 @@ disable-model-invocation: true
 
 # Type System Discipline
 
+In Claude Code, read the Claude Code adapter (the `pstack-harness` skill) once per session before you follow this skill. It maps the Cursor names in pstack skills to Claude Code.
+
 Make the compiler reject impossible states, mismatched primitives, and unhandled variants.
 
 - **Brand semantic primitives.** If two arguments share a primitive type but mean different things, give each its own type. Validate once at creation.
