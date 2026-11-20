@@ -1,84 +1,4 @@
-<!-- mirror:start — this top section is specific to the mirror. Everything after mirror:end is the upstream README from cursor/plugins/pstack, unchanged. To sync with upstream, follow MIRROR.md. -->
-<h1 align="center">pstack — standalone mirror</h1>
-
-<p align="center">
-  <a href="https://github.com/cursor/plugins/tree/main/pstack">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="mirror-assets/header-dark.svg">
-      <img src="mirror-assets/header-light.svg" width="100%" alt="cursor/plugins/pstack is kept in sync with this mirror, backnotprop/pstack. npx skills add backnotprop/pstack installs it into Claude Code, Codex, Pi, Cursor, OpenCode, and other agents.">
-    </picture>
-  </a>
-</p>
-
-<p align="center">
-  <b>Mirror</b> of cursor/plugins/pstack by Poteto — kept in sync for standalone use. Sponsored by Plannotator.
-</p>
-
-<p align="center">
-  <a href="https://github.com/backnotprop/plannotator"><picture>
-    <source media="(prefers-color-scheme: dark)" srcset="mirror-assets/sponsor-plannotator-dark.svg">
-    <img src="mirror-assets/sponsor-plannotator-light.svg" width="48%" alt="Sponsored by Plannotator">
-  </picture></a>
-  <a href="https://plannotator.ai/inbox/"><picture>
-    <source media="(prefers-color-scheme: dark)" srcset="mirror-assets/sponsor-inbox-dark.svg">
-    <img src="mirror-assets/sponsor-inbox-light.svg" width="48%" alt="Try Plannotator Inbox today">
-  </picture></a>
-</p>
-
-<p align="center">
-  Poteto's Bro Skill was created by me, <a href="https://github.com/backnotprop/bro">backnotprop/bro</a>
-</p>
-
-## Install
-
-pstack is a folder of plain [Agent Skills](https://agentskills.io) (`skills/<name>/SKILL.md`). You don't need [Cursor](https://github.com/cursor/plugins/tree/main/pstack). The [`skills` CLI](https://skills.sh) installs them into Claude Code, Codex, Pi, Cursor, OpenCode, and other agents:
-
-```bash
-npx skills add backnotprop/pstack
-```
-
-The CLI shows every skill in a list you can search. Select the skills you want, then select your agents.
-
-## Skills
-
-Cursor's original README is [further down this page](#pstack).
-
-These skills don't call other pstack skills, so each one works alone:
-
-`unslop`, `bro`, `how`, `why`, `tdd`, `typescript-best-practices`, `arena`, `swarm`, `interrogate`, `reflect`, `show-me-your-work`, `figure-it-out`, `automate-me`, `correct`, `benchmark-checklist`, `in-your-own-words`, `sharpen`, `statechart`
-
-Some skills call other skills. Install these together:
-
-| Skill | Also install |
-|---|---|
-| `teach` | `how`, `why` |
-| `technical-writing` | `unslop` |
-| `architect` | `arena` |
-| `blast-radius` | `arena`, `how`, `why`, `unslop` |
-| `create-verification-skill` | `maintain-verification-skill` |
-| `create-formal-verification-skill` | `maintain-formal-verification-skill`, `statechart` |
-| `ketchup` | `bro` |
-| `ketchup-video` | `ketchup`, `bro` |
-| `poteto-mode` | all `principle-*` skills and most of the other skills |
-| `poteto-help` | the skills you want help with |
-
-Skills that spawn subagents point to the Subagents section of `poteto-mode` to pick each subagent's effort. Without `poteto-mode`, they use the default effort.
-
-## What this mirror changes
-
-Many skills were Cursor-specific. They've been rewritten to work in any harness.
-
-The mirror also carries two community fixes that aren't upstream yet:
-
-- `no-comments` keeps a comment about an outside rule (a dependency, platform, or protocol) when it can't check the rule, and marks it for review instead of deleting it. A rejected review no longer stops the whole run. ([#14](https://github.com/backnotprop/pstack/issues/14))
-- `statechart` runs on Windows: it no longer needs `/bin/sh`, reads TLC output with Windows line endings, and cleans up its temp folder after a killed run. Patch by [@yasuyuki](https://github.com/yasuyuki). ([#17](https://github.com/backnotprop/pstack/issues/17))
-<!-- mirror:end -->
-
----
-
 # pstack
-
-[See Pstack Blog](https://x.com/poteto/article/2094457600259842065?lang=en)
 
 i'm [poteto](https://x.com/poteto). i'm not a president or ceo, but i've worked with millions of lines of code at Meta, Netflix, and Cursor. i'm also on the react core team where i help build and maintain react compiler.
 
@@ -361,9 +281,9 @@ when a default changes, a rule written before the change still pins the old defa
 
 ## automations
 
-pstack also ships a dormant [benny automation pack](./automations/benny/). benny triages slack issue reports, then reproduces and fixes confirmed bugs with real ui evidence. its files are not registered as slash skills.
+pstack also ships a dormant [benny automation pack](https://github.com/cursor/plugins/tree/main/pstack/automations/benny). benny triages slack issue reports, then reproduces and fixes confirmed bugs with real ui evidence. its files are not registered as slash skills.
 
-to set it up, point cursor at [`FOR_AGENTS.md`](./automations/benny/FOR_AGENTS.md). setup copies the pack into the target repository at `.cursor/automations/benny/`, enables pstack there for shared skills, and keeps user configuration outside the copied pack. benny runs on cursor automations, so it is cursor-only.
+to set it up, point cursor at [`FOR_AGENTS.md`](https://github.com/cursor/plugins/blob/main/pstack/automations/benny/FOR_AGENTS.md). setup copies the pack into the target repository at `.cursor/automations/benny/`, enables pstack there for shared skills, and keeps user configuration outside the copied pack. benny runs on cursor automations, so it is cursor-only.
 
 ## license
 
