@@ -21,7 +21,8 @@ for dir in skills agents docs; do
 done
 mkdir -p .claude-plugin
 cp "$tree/.claude-plugin/plugin.json" .claude-plugin/
-cp "$tree/README.md" "$tree/LICENSE" "$tree/plugin.json" .
+cp "$tree/LICENSE" "$tree/plugin.json" .
+cat .github/README-fork.md "$tree/README.md" > README.md
 uv run .github/scripts/adapt.py .
 
 sed -i "s/^version: .*/version: $(jq -r .version plugin.json)/" apm.yml

@@ -24,7 +24,9 @@ Cursor builds the tree to install as a Claude Code plugin. APM installs plain sk
 - It points each skill's "read the Claude Code adapter" line at the `pstack-harness` skill.
 - It turns every other link that leaves a skill's folder into a `https://github.com/cursor/plugins/blob/main/pstack/...` URL. The adapter tells Claude to read the local copy of such a file when one exists.
 
-Do not edit Cursor's files on `main`. The next sync overwrites them. Change `adapt.py` instead.
+`sync.sh` also builds `README.md` from `.github/README-fork.md` followed by Lauren's README.
+
+Do not edit Cursor's files on `main`. The next sync overwrites them. Change `adapt.py` or `.github/README-fork.md` instead.
 
 ## The nightly workflow
 
